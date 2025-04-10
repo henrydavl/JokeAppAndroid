@@ -63,28 +63,39 @@ class ExpandableJokeAdapter(
         notifyDataSetChanged()
     }
 
-    fun submitJokes(category: String, jokes: List<Joke>) {
-        val index = items.indexOfFirst { it is JokeListItem.CategoryItem && it.category == category }
-        if (index == -1) return
-
-        // Don't add again if already expanded
-        val isAlreadyExpanded = (items.getOrNull(index + 1) is JokeListItem.JokeItem)
-        if (isAlreadyExpanded) return
-
-        val jokeItems = jokes.map { JokeListItem.JokeItem(it) }.toMutableList<JokeListItem>()
-
-        if (jokeItems.size < 6) {
-            jokeItems.add(JokeListItem.LoadMoreItem(category))
+    @SuppressLint("NotifyDataSetChanged")
+    fun expandCategoryExclusive(category: String, newJokes: List<Joke>) {
+        val currentCategoryIndex = items.indexOfFirst {
+            it is JokeListItem.CategoryItem && it.category == category && it.isExpanded
         }
 
-        items.addAll(index + 1, jokeItems)
-        notifyItemRangeInserted(index + 1, jokeItems.size)
+        if (currentCategoryIndex != -1) {
+            return
+        }
 
-        // Update the expanded state
-        val currentItem = items[index] as JokeListItem.CategoryItem
-        items[index] = currentItem.copy(isExpanded = true)
-        notifyItemChanged(index)
+        val newList = mutableListOf<JokeListItem>()
+
+        items.forEach {
+            if (it is JokeListItem.CategoryItem) {
+                newList.add(
+                    if (it.category == category) it.copy(isExpanded = true)
+                    else it.copy(isExpanded = false)
+                )
+
+                if (it.category == category) {
+                    newList.addAll(newJokes.take(2).map { joke -> JokeListItem.JokeItem(joke) })
+                    if (newJokes.size < 6) {
+                        newList.add(JokeListItem.LoadMoreItem(category))
+                    }
+                }
+            }
+        }
+
+        items.clear()
+        items.addAll(newList)
+        notifyDataSetChanged()
     }
+
 
     inner class CategoryViewHolder(
         private val binding: ItemCategoryBinding

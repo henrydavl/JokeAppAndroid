@@ -70,16 +70,14 @@ class JokeActivity : AppCompatActivity() {
         viewModel.jokesOnCategory.observe(this) { response ->
             when (response) {
                 is Resource.Loading -> {
-                    showLoading(true)
+
                 }
 
                 is Resource.Success -> {
-                    showLoading(false)
                     loadJoke(response.data)
                 }
 
                 is Resource.Error -> {
-                    showLoading(false)
                     response.message?.let {
                         Timber.tag(TAG).e(it)
                         showToastMessage("An error occurred $it")
@@ -115,7 +113,7 @@ class JokeActivity : AppCompatActivity() {
             Timber.tag(TAG).e("${it.jokes}")
             jokeList.value = it.jokes
             addModeCount += 1
-            jokeAdapter?.submitJokes(selectedCategory, it.jokes)
+            jokeAdapter?.expandCategoryExclusive(selectedCategory, it.jokes)
         }
     }
 
@@ -131,9 +129,5 @@ class JokeActivity : AppCompatActivity() {
             pbLoading.visibility = GONE
             rvJokeCategory.visibility = VISIBLE
         }
-    }
-
-    private fun showLoading(isLoading: Boolean) = with(binding) {
-        if (isLoading) pbLoading.visibility = VISIBLE else pbLoading.visibility = GONE
     }
 }
