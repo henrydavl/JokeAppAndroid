@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">JokeApp</string>
+    <string name="joke_app">Joke App</string>
+    <string name="load_more_joke">Load more joke!</string>
 </resources>

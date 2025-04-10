@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="32dp"
+    android:layout_marginEnd="16dp"
+    android:foreground="?attr/selectableItemBackground"
+    app:cardElevation="0dp">
+
+    <TextView
+        android:id="@+id/btn_load_more"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/black"
+        android:maxLines="2"
+        android:padding="8dp"
+        android:textAlignment="center"
+        android:text="@string/load_more_joke"
+        android:textColor="@color/white"
+        android:textStyle="bold" />
+</androidx.cardview.widget.CardView>
