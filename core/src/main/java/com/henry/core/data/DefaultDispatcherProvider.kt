@@ -1,0 +1,3 @@
+package com.henry.core.data
+
+class DefaultDispatcherProvider: CoroutineDispatcherProvider
