@@ -39,8 +39,18 @@ class JokeActivity : AppCompatActivity() {
         binding = ActivityJokeBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        binding.swipeRefreshLayout.setOnRefreshListener {
+            refreshData()
+        }
+
         viewModel.getCategories()
         observeCategory()
+    }
+
+    private fun refreshData() = with(binding) {
+        swipeRefreshLayout.isRefreshing = true
+        viewModel.getCategories()
+        swipeRefreshLayout.isRefreshing = false
     }
 
     private fun observeCategory() {
