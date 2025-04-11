@@ -97,7 +97,7 @@ class JokeActivity : AppCompatActivity() {
     private fun loadCategory(categories: List<Pair<Int, String>>) = with(binding) {
         jokeAdapter = ExpandableJokeAdapter(
             onCategoryClicked = { selectedCategory ->
-                viewModel.getJokeByCategory(selectedCategory)
+                viewModel.getJokeByCategory(selectedCategory, false)
                 observeJokeOnCategory()
             },
             onJokeClicked = { joke ->
@@ -106,6 +106,10 @@ class JokeActivity : AppCompatActivity() {
             },
             onPinTopPressed = { category ->
                 viewModel.moveItemToTop(category)
+            },
+            onLoadMoreClickListener = { category ->
+                viewModel.getJokeByCategory(category, isLoadMore = true)
+                observeJokeOnCategory()
             }
         )
         rvJokeCategory.apply {
@@ -113,15 +117,22 @@ class JokeActivity : AppCompatActivity() {
             adapter = jokeAdapter
         }
         jokeAdapter?.submitCategories(categories)
+        rvJokeCategory.smoothScrollToPosition(0)
     }
-
 
     private fun loadJoke(item: JokeItem?) = with(viewModel) {
         item?.let {
             Timber.tag(TAG).e("${it.jokes} | ${it.jokes.map { it.category }}")
-            jokeList.value = it.jokes
-            addModeCount += 1
-            jokeAdapter?.expandCategoryExclusive(selectedCategory, it.jokes)
+            if (isLoadMore) {
+                jokeList += it.jokes
+                Timber.e("$TAG Joke list: ${jokeList.size}")
+                isLoadMore = false
+                jokeAdapter?.appendMoreJokes(selectedCategory, it.jokes)
+            } else {
+                jokeList = it.jokes.toMutableList()
+                Timber.e("$TAG Joke list: ${jokeList.size}")
+                jokeAdapter?.expandCategoryExclusive(selectedCategory, jokeList)
+            }
         }
     }
 

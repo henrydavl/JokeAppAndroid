@@ -18,7 +18,7 @@ class ExpandableJokeAdapter(
     private val onCategoryClicked: (category: Pair<Int, String>) -> Unit,
     private val onJokeClicked: (joke: Joke) -> Unit,
     private val onPinTopPressed: ((category: JokeListItem.CategoryItem) -> Unit)? = null,
-    private val onLoadMoreClickListener: ((category: Pair<Int, String>, position: Int) -> Unit)? = null
+    private val onLoadMoreClickListener: ((category: Pair<Int, String>) -> Unit)? = null
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private val items = mutableListOf<JokeListItem>()
@@ -100,6 +100,36 @@ class ExpandableJokeAdapter(
         notifyDataSetChanged()
     }
 
+    @SuppressLint("NotifyDataSetChanged")
+    fun appendMoreJokes(category: Pair<Int, String>, newJokes: List<Joke>) {
+        val categoryIndex = items.indexOfFirst {
+            it is JokeListItem.CategoryItem && it.category == category
+        }
+
+        if (categoryIndex == -1) return
+
+        val loadMoreIndex = items.indexOfFirst {
+            it is JokeListItem.LoadMoreItem && it.category == category
+        }
+        if (loadMoreIndex != -1) {
+            items.removeAt(loadMoreIndex)
+            notifyItemRemoved(loadMoreIndex)
+        }
+
+        val jokeItems = newJokes.map { JokeListItem.JokeItem(it) }
+        val insertPosition = loadMoreIndex.takeIf { it != -1 } ?: (categoryIndex + 1)
+
+        items.addAll(insertPosition, jokeItems)
+        notifyItemRangeInserted(insertPosition, jokeItems.size)
+
+        val totalJokesShown = items.count {
+            it is JokeListItem.JokeItem && items.indexOf(it) > categoryIndex
+        }
+        if (totalJokesShown < 6) {
+            items.add(insertPosition + jokeItems.size, JokeListItem.LoadMoreItem(category))
+            notifyItemInserted(insertPosition + jokeItems.size)
+        }
+    }
 
     inner class CategoryViewHolder(
         private val binding: ItemCategoryBinding
@@ -139,7 +169,7 @@ class ExpandableJokeAdapter(
     inner class LoadMoreViewHolder(private val binding: ItemLoadMoreBinding) :
         RecyclerView.ViewHolder(binding.root) {
         fun bind(category: Pair<Int, String>) {
-            binding.btnLoadMore.setOnClickListener { onLoadMoreClickListener?.invoke(category, adapterPosition) }
+            binding.btnLoadMore.setOnClickListener { onLoadMoreClickListener?.invoke(category) }
         }
     }
 }

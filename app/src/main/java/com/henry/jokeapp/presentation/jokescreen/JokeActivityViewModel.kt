@@ -35,17 +35,18 @@ class JokeActivityViewModel @Inject constructor(
     private val _jokesOnCategory = MutableLiveData<Resource<JokeItem>>()
     val jokesOnCategory get() = _jokesOnCategory
 
-    internal var jokeList = MutableLiveData<List<Joke>>()
-    internal var addModeCount = 0
+    internal var jokeList: MutableList<Joke> = mutableListOf()
+    internal var isLoadMore = false
     internal var selectedCategory: Pair<Int, String> = Pair(0, "")
 
     fun getCategories() = viewModelScope.launch {
         getCategoriesUseCase.invoke().collect { _categoryList.postValue(it) }
     }
 
-    fun getJokeByCategory(category: Pair<Int, String>) = viewModelScope.launch {
-        Timber.tag(TAG).e("getJokeByCategory: $category")
+    fun getJokeByCategory(category: Pair<Int, String>, isLoadMore: Boolean = false) = viewModelScope.launch {
+        Timber.tag(TAG).e("getJokeByCategory: $category, isLoadMore: $isLoadMore")
         selectedCategory = category
+        this@JokeActivityViewModel.isLoadMore = isLoadMore
         getJokeByCategoryUseCase.invoke(category.second).collect {
             _jokesOnCategory.postValue(it)
         }
