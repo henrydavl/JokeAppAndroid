@@ -10,7 +10,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.henry.core.entity.category.JokeCategory
 import com.henry.core.entity.jokeitem.JokeItem
 import com.henry.core.utils.Resource
 import com.henry.jokeapp.databinding.ActivityJokeBinding
@@ -39,10 +38,10 @@ class JokeActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         viewModel.getCategories()
-        observeCategoryList()
+        observeCategory()
     }
 
-    private fun observeCategoryList() {
+    private fun observeCategory() {
         viewModel.categoryList.observe(this) { response ->
             when (response) {
                 is Resource.Loading -> {
@@ -51,7 +50,8 @@ class JokeActivity : AppCompatActivity() {
 
                 is Resource.Success -> {
                     isLoading(false)
-                    loadCategory(response.data)
+                    viewModel.setCategoryNameList(response.data?.categories)
+                    observeCategoryList()
                     Timber.tag(TAG).e("${response.data?.categories}")
                 }
 
@@ -87,30 +87,38 @@ class JokeActivity : AppCompatActivity() {
         }
     }
 
-    private fun loadCategory(category: JokeCategory?) = with(binding) {
-        category?.let {
-            jokeAdapter = ExpandableJokeAdapter(
-                onCategoryClicked = { selectedCategory ->
-                    viewModel.getJokeByCategory(selectedCategory)
-                    observeJokeOnCategory()
-                },
-                onJokeClicked = { joke ->
-                    Timber.tag(TAG).e("Joke clicked: ${joke.joke}")
-                    showToastMessage("Joke clicked: ${joke.joke}")
-                }
-            )
-            rvJokeCategory.apply {
-                layoutManager = LinearLayoutManager(this@JokeActivity)
-                adapter = jokeAdapter
-            }
-            jokeAdapter?.submitCategories(it.categories)
+    private fun observeCategoryList() {
+        viewModel.categoryNameList.observe(this) { categories ->
+            Timber.tag(TAG).e("Category: $categories")
+            categories?.let { loadCategory(categories) }
         }
+    }
+
+    private fun loadCategory(categories: List<Pair<Int, String>>) = with(binding) {
+        jokeAdapter = ExpandableJokeAdapter(
+            onCategoryClicked = { selectedCategory ->
+                viewModel.getJokeByCategory(selectedCategory)
+                observeJokeOnCategory()
+            },
+            onJokeClicked = { joke ->
+                Timber.tag(TAG).e("Joke clicked: ${joke.joke}")
+                showToastMessage("Joke clicked: ${joke.joke}")
+            },
+            onPinTopPressed = { category ->
+                viewModel.moveItemToTop(category)
+            }
+        )
+        rvJokeCategory.apply {
+            layoutManager = LinearLayoutManager(this@JokeActivity)
+            adapter = jokeAdapter
+        }
+        jokeAdapter?.submitCategories(categories)
     }
 
 
     private fun loadJoke(item: JokeItem?) = with(viewModel) {
         item?.let {
-            Timber.tag(TAG).e("${it.jokes}")
+            Timber.tag(TAG).e("${it.jokes} | ${it.jokes.map { it.category }}")
             jokeList.value = it.jokes
             addModeCount += 1
             jokeAdapter?.expandCategoryExclusive(selectedCategory, it.jokes)

@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.henry.core.entity.jokeitem.Joke
+import com.henry.jokeapp.R
 import com.henry.jokeapp.databinding.ItemCategoryBinding
 import com.henry.jokeapp.databinding.ItemJokeBinding
 import com.henry.jokeapp.databinding.ItemLoadMoreBinding
@@ -14,9 +15,10 @@ import com.henry.jokeapp.presentation.jokescreen.adapter.ItemMenuViewType.VIEW_T
 import com.henry.jokeapp.utils.JokeListItem
 
 class ExpandableJokeAdapter(
-    private val onCategoryClicked: (category: String) -> Unit,
+    private val onCategoryClicked: (category: Pair<Int, String>) -> Unit,
     private val onJokeClicked: (joke: Joke) -> Unit,
-    private val onLoadMoreClickListener: ((category: String, position: Int) -> Unit)? = null
+    private val onPinTopPressed: ((category: JokeListItem.CategoryItem) -> Unit)? = null,
+    private val onLoadMoreClickListener: ((category: Pair<Int, String>, position: Int) -> Unit)? = null
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private val items = mutableListOf<JokeListItem>()
@@ -40,7 +42,7 @@ class ExpandableJokeAdapter(
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (val item = items[position]) {
-            is JokeListItem.CategoryItem -> (holder as CategoryViewHolder).bind(item.category, position)
+            is JokeListItem.CategoryItem -> (holder as CategoryViewHolder).bind(item, position)
             is JokeListItem.JokeItem -> (holder as JokeViewHolder).bind(item.joke)
             is JokeListItem.LoadMoreItem -> (holder as LoadMoreViewHolder).bind(item.category)
         }
@@ -57,14 +59,16 @@ class ExpandableJokeAdapter(
     }
 
     @SuppressLint("NotifyDataSetChanged")
-    fun submitCategories(categories: List<String>) {
+    fun submitCategories(categories: List<Pair<Int, String>>) {
         items.clear()
-        items.addAll(categories.map { JokeListItem.CategoryItem(it) })
+        items.addAll(
+            categories.map { category -> JokeListItem.CategoryItem(category = category) }
+        )
         notifyDataSetChanged()
     }
 
     @SuppressLint("NotifyDataSetChanged")
-    fun expandCategoryExclusive(category: String, newJokes: List<Joke>) {
+    fun expandCategoryExclusive(category: Pair<Int, String>, newJokes: List<Joke>) {
         val currentCategoryIndex = items.indexOfFirst {
             it is JokeListItem.CategoryItem && it.category == category && it.isExpanded
         }
@@ -78,8 +82,8 @@ class ExpandableJokeAdapter(
         items.forEach {
             if (it is JokeListItem.CategoryItem) {
                 newList.add(
-                    if (it.category == category) it.copy(isExpanded = true)
-                    else it.copy(isExpanded = false)
+                    if (it.category == category) it.apply { isExpanded = true }
+                    else it.apply { isExpanded = false }
                 )
 
                 if (it.category == category) {
@@ -101,10 +105,26 @@ class ExpandableJokeAdapter(
         private val binding: ItemCategoryBinding
     ) : RecyclerView.ViewHolder(binding.root) {
         @SuppressLint("SetTextI18n")
-        fun bind(category: String, position: Int) = with(binding) {
-            tvCategoryNumber.text = (position + 1).toString()
-            tvCategory.text = category
-            root.setOnClickListener { onCategoryClicked(category) }
+        fun bind(category: JokeListItem.CategoryItem, position: Int) = with(binding) {
+            tvCategoryNumber.text = (category.category.first + 1).toString()
+            tvCategory.text = category.category.second
+
+            if (position == 0) {
+                btnPinToTop.text = root.context.getText(R.string.pinned_on_top)
+                btnPinToTop.isEnabled = false
+            }
+            else {
+                btnPinToTop.text = root.context.getText(R.string.pin_to_top)
+                btnPinToTop.isEnabled = true
+            }
+
+            if (position != 0) {
+                btnPinToTop.setOnClickListener { onPinTopPressed?.invoke(category) }
+            } else {
+                btnPinToTop.setOnClickListener(null)
+            }
+
+            root.setOnClickListener { onCategoryClicked(category.category) }
         }
     }
 
@@ -118,7 +138,7 @@ class ExpandableJokeAdapter(
 
     inner class LoadMoreViewHolder(private val binding: ItemLoadMoreBinding) :
         RecyclerView.ViewHolder(binding.root) {
-        fun bind(category: String) {
+        fun bind(category: Pair<Int, String>) {
             binding.btnLoadMore.setOnClickListener { onLoadMoreClickListener?.invoke(category, adapterPosition) }
         }
     }
