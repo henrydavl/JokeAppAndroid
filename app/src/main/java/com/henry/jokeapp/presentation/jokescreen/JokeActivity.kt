@@ -12,6 +12,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.henry.core.entity.jokeitem.JokeItem
 import com.henry.core.utils.Resource
+import com.henry.core.widget.dialog.DialogShowJoke
 import com.henry.jokeapp.databinding.ActivityJokeBinding
 import com.henry.jokeapp.presentation.jokescreen.adapter.ExpandableJokeAdapter
 import dagger.hilt.android.AndroidEntryPoint
@@ -27,6 +28,7 @@ class JokeActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityJokeBinding
     private var jokeAdapter: ExpandableJokeAdapter? = null
+    private var dialogShowJoke: DialogShowJoke? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge(
@@ -101,8 +103,7 @@ class JokeActivity : AppCompatActivity() {
                 observeJokeOnCategory()
             },
             onJokeClicked = { joke ->
-                Timber.tag(TAG).e("Joke clicked: ${joke.joke}")
-                showToastMessage("Joke clicked: ${joke.joke}")
+                showJokeContent(joke.joke)
             },
             onPinTopPressed = { category ->
                 viewModel.moveItemToTop(category)
@@ -138,6 +139,13 @@ class JokeActivity : AppCompatActivity() {
 
     private fun showToastMessage(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun showJokeContent(jokeContent: String) {
+        dialogShowJoke = DialogShowJoke(
+            content = jokeContent
+        )
+        dialogShowJoke?.show(supportFragmentManager, dialogShowJoke?.tag)
     }
 
     private fun isLoading(isLoading: Boolean) = with(binding) {
